@@ -1,0 +1,177 @@
+#!/bin/bash
+
+############################################################################################################
+#
+# Mega Backup Script
+# Autor: Aleritty <aleritty//#AT#//aleritty.net> http://www.aleritty.net
+#	Questo script permette di effettuare backup di un database
+#
+#	Esecuzione:
+#		~$ sudo /bin/bash megaBackup.sh [ -h --help]
+#
+# Copyright (c) 2016 Aleritty
+#
+#	Questo script è rilasciato sotto licenza creative commons:
+#		http://creativecommons.org/licenses/by-nc-sa/2.5/it/
+#	E' quindi possibile: riprodurre, distribuire, comunicare al pubblico,
+#	esporre in pubblico, eseguire, modificare quest'opera
+#	Alle seguenti condizioni:
+#	Attribuzione. Devi attribuire la paternità dell'opera nei modi indicati
+#	dall'autore o da chi ti ha dato l'opera in licenza e in modo tale da non
+#	suggerire che essi avallino te o il modo in cui tu usi l'opera.
+#
+#	Non commerciale. Non puoi usare quest'opera per fini commerciali.
+#
+#	Condividi allo stesso modo. Se alteri o trasformi quest'opera, o se la usi
+#	per crearne un'altra, puoi distribuire l'opera risultante solo con una
+#	licenza identica o equivalente a questa.
+#
+#	Questo script agisce su indicazioni e conferma dell'utente, pertanto
+#	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
+#	derivata dall'uso improprio o inconsapevole di questo script!
+
+VERSION=0.01
+
+######################### Se non sei root non sei figo #########################
+if [[ $EUID -ne 0 ]]; then
+	echo
+	echo "ERRORE: Devi avere i privilegi da superutente per lanciarmi"
+	echo
+	exit 1
+fi
+
+TIMESTAMP=$(date +"%F_%H-%M")
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+if [ -e ".megaBackup.cfg" ]; then
+  source .megaBackup.cfg
+else
+  echo
+  echo "Non hai ancora compilato le configurazioni, fallo e poi rilanciami"
+  echo
+  exit 1
+fi
+
+###Controlla esistenza di megatools senno chiedi ed installa
+MEGATOOLS_PATH=`command -v megals 2>&1 || { echo >&2 "Mi servono i megatools, senza non posso fare nulla, installali"; exit 1; }`
+#### otherwise...
+#apt-get -y install build-essential libglib2.0-dev libssl-dev libcurl4-openssl-dev libgirepository1.0-dev glib-networking
+#wget http://megatools.megous.com/builds/megatools-1.9.98.tar.gz
+#tar xzf megatools-1.9.98.tar.gz
+#cd megatools-1.9.98
+#./configure && make && make install && ldconfig
+
+# check for credentials in /root/.megarc
+#or copy them from .megaBackup.cfg
+##[Login]
+##Username = Your_Mega_Username
+##Password = Your_Mega_Password
+
+# check chmod 640 /root/.megarc
+
+if [ ! -d "$BACKUP_LOCATION" ]; then
+  mkdir -p "$BACKUP_LOCATION"
+fi
+cd "$BACKUP_LOCATION"
+
+##################### Aggiornamento dello script da github #####################
+upgradescript(){
+  echo
+  echo "Cerco aggiornamenti..."
+  echo
+	gitversion=$(wget https://github.com/aleritty/megabackup/raw/master/megaBackup.sh -O - 2>/dev/null | grep "^VERSION=")
+	if [[ ${gitversion:8} > $VERSION ]];then
+		echo
+    echo "Trovato aggiornamento..."
+    echo
+    cd "$SCRIPT_DIR"
+    # scelta se aggiornare...
+    git pull
+		clear
+    echo "Aggiornamento terminato, rilancia lo script per effettuare il backup"
+		exit 0
+	else
+    echo
+    echo "Nessun aggiornamento necessario, hai l'ultima versione dello script"
+    echo
+  fi
+}
+
+################ INSTALLAZIONE CRONJOB #########################################
+cronLen=${#CRON_WHEN[@]}
+if [ "$cronLen" -gt 0 ]; then
+	crontab -l > /tmp/mycron-megaBackup
+	sed -i '/megaBackup.sh/d' /tmp/mycron-megaBackup
+	for (( i=0; i<${cronLen}; i++ )); do
+		echo "${CRON_WHEN[$i]} /bin/bash "$SCRIPT_DIR"/megaBackup.sh" >> /tmp/mycron-megaBackup
+	done
+	crontab /tmp/mycron-megaBackup
+	rm /tmp/mycron-megaBackup
+fi
+
+################# Sezione help ed invocazioni particolari ######################
+if [[ "$1" = "--help" || "$1" = "-h" ]]; then
+	echo
+	echo "Mega-Backup $VERSION
+Written By AleRitty <aleritty@aleritty.net>
+Effettua Backup su Mega.nz
+
+Usage:
+sudo /bin/bash megaBackup.sh [ --upd ]
+
+--upd 				Aggiorna lo script all'ultima versione
+--help				Mostra questa schermata
+-q | --quiet	Nasconde l'outup per l'uso negli script
+
+L'invocazione normale senza parametri lancia il backup secondo le configurazioni
+impostate nel file ~/.megaBackup.cfg
+
+"
+	exit 1
+fi
+
+if [[ "$1" = "--upd" || "$1" = "-u" ]]; then
+	echo
+	echo "Vuoi che aggiorni? Ok, aggiorno..."
+	upgradescript
+	exit 0
+fi
+
+echo
+echo '#### INIZIO BACKUP ####'
+echo '#### può richiedere un po di tempo ####'
+echo
+# Workaround to prevent dbus error messages
+export $(dbus-launch)
+# Create base backup folder if needed
+[ -z "$(megals --reload /Root/backup_${BACKUP_PREFIX})" ] && megamkdir /Root/backup_${BACKUP_PREFIX}
+
+if [ "$KEEP_NUM" -gt 0 ] && [ $(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ] ; then
+	echo
+	echo '#### ELIMINAZIONE VECCHI BACKUP ####'
+  echo "questi backup verranno eliminati"
+  echo "Qualsiasi altro file non verrà toccato"
+	while [ $(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
+	do
+		TO_REMOVE=$(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
+		megarm ${TO_REMOVE}
+	done
+fi
+
+#if quiet
+megamkdir /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} 2> /dev/null
+
+#if quiet
+megacopy --reload --no-progress -l ${BACKUP_DIR} -r /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} > /dev/null
+
+# Kill DBUS session daemon (workaround)
+kill ${DBUS_SESSION_BUS_PID}
+rm -f ${DBUS_SESSION_BUS_ADDRESS}
+
+echo
+echo
+echo '###########################'
+echo '#### BACKUP COMPLETATO ####'
+echo '###########################'
+echo
+echo
