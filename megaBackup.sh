@@ -30,7 +30,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.09
+VERSION=0.10
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
@@ -199,7 +199,7 @@ fi
 megamkdir /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} 2> /dev/null
 
 #if quiet
-megacopy --reload --no-progress -l ${BACKUP_DIR} -r /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} > /dev/null
+megacopy --reload --no-progress -l ${BACKUP_LOCATION} -r /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} > /dev/null
 
 # Kill DBUS session daemon (workaround)
 if [[ ${DBUS_SESSION_BUS_PID} ]]; then
