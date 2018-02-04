@@ -30,7 +30,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.04
+VERSION=0.05
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
@@ -89,7 +89,7 @@ else
 fi
 
 ### DEPRECATO ###
-if [ $(stat -c %a ~/.megarc) != 640 ]; then
+if [[ $(stat -c %a ~/.megarc) != '640' ]]; then
 	echo "ERRORE: gli attributi del file .megarc sono troppo permissivi! Attenzione, c'è la tua password in chiaro li dentro! fai"
 	echo "sudo chmod 0640 ~/.megarc"
 	exit 1
