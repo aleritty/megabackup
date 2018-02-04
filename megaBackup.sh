@@ -30,7 +30,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.06
+VERSION=0.09
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
@@ -47,7 +47,7 @@ if [ -e ".megaBackup.cfg" ]; then
   source .megaBackup.cfg
 else
   echo
-  echo "Non hai ancora compilato le configurazioni, fallo e poi rilanciami"
+  echo "ERRORE: Non hai ancora compilato le configurazioni, fallo e poi rilanciami"
   echo
   exit 1
 fi
@@ -60,7 +60,7 @@ fi
 ###Controlla esistenza di megatools senno chiedi ed installa
 if [ ! `command -v megals 2>&1` ]; then
 	echo
-	read -p "Mi servono i megatools e tu non li hai, senza non posso fare nulla, vuoi installarli? y/[n]" -n 1 CHECKINSTALL
+	read -p "ERRORE: Mi servono i megatools e tu non li hai, senza non posso fare nulla, vuoi installarli? y/[n]" -n 1 CHECKINSTALL
 	if [ "$CHECKINSTALL" = "y" ];then
 		echo
 		echo "OK! Procedo con l'installazione!"
@@ -82,17 +82,24 @@ if [ ! `command -v megals 2>&1` ]; then
 	fi
 fi
 
-if [[ -z ${MEGA_USER+x} || -z ${MEGA_PW+x} ]]; then
-	echo "ERRORE: Non hai impostato le credenziali per l'accesso..."
+######## Controllo .megarc per sicurezza #######################################
+if [[ -f "~/.megarc" ]]; then
+	if [[$(stat -c %a ~/.megarc) != '640' ]]; then
+		echo "ERRORE: gli attributi del file .megarc sono troppo permissivi! Attenzione, c'è la tua password in chiaro li dentro! fai"
+		echo "sudo chmod 0640 ~/.megarc"
+		exit 1
+	fi
+	#controllo per gli attributi dentro??
 else
-	PRELINEA+=" -u $MEGA_USER -p $MEGA_PW"
-fi
-
-### DEPRECATO ###
-if [[ -f "~/.megarc" && $(stat -c %a ~/.megarc) != '640' ]]; then
-	echo "ERRORE: gli attributi del file .megarc sono troppo permissivi! Attenzione, c'è la tua password in chiaro li dentro! fai"
-	echo "sudo chmod 0640 ~/.megarc"
-	exit 1
+	if [[ -z ${MEGA_USER+x} || -z ${MEGA_PW+x} ]]; then
+		echo "ERRORE: Non hai impostato le credenziali per l'accesso, salvale nel file di configurazione"
+		exit 1
+	else
+		#controllo per gli attributi dentro??
+		echo "[Login]" > "~/.megarc"
+		echo "Username = $MEGA_USER" >> "~/.megarc"
+		echo "Password = $MEGA_PW" >> "~/.megarc"
+	fi
 fi
 
 if [ ! -d "$BACKUP_LOCATION" ]; then
@@ -172,29 +179,31 @@ echo
 # Workaround to prevent dbus error messages
 export $(dbus-launch) > /dev/null
 # Create base backup folder if needed
-[ -z "$(megals  $PRELINEA --reload /Root/backup_${BACKUP_PREFIX})" ] && megamkdir $PRELINEA /Root/backup_${BACKUP_PREFIX}
+[ -z "$(megals  --reload /Root/backup_${BACKUP_PREFIX})" ] && megamkdir /Root/backup_${BACKUP_PREFIX}
 
-if [ "$KEEP_NUM" -gt 0 ] && [ $(megals $PRELINEA --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ] ; then
+if [ "$KEEP_NUM" -gt 0 ] && [ $(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ] ; then
 	echo
 	echo '#### ELIMINAZIONE VECCHI BACKUP ####'
   echo "questi backup verranno eliminati"
   echo "Qualsiasi altro file non verrà toccato"
-	while [ $(megals $PRELINEA --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
+	while [ $(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
 	do
-		TO_REMOVE=$(megals $PRELINEA --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
-		megarm $PRELINEA ${TO_REMOVE}
+		TO_REMOVE=$(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
+		megarm ${TO_REMOVE}
 	done
 fi
 
 #if quiet
-megamkdir $PRELINEA /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} 2> /dev/null
+megamkdir /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} 2> /dev/null
 
 #if quiet
-megacopy $PRELINEA --reload --no-progress -l ${BACKUP_DIR} -r /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} > /dev/null
+megacopy --reload --no-progress -l ${BACKUP_DIR} -r /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} > /dev/null
 
 # Kill DBUS session daemon (workaround)
-kill ${DBUS_SESSION_BUS_PID}
-rm -f ${DBUS_SESSION_BUS_ADDRESS}
+if [[ ${DBUS_SESSION_BUS_PID} ]]; then
+	kill ${DBUS_SESSION_BUS_PID}
+	rm -f ${DBUS_SESSION_BUS_ADDRESS}
+fi
 
 echo
 echo
