@@ -96,6 +96,8 @@ else
 		exit 1
 	else
 		#controllo per gli attributi dentro??
+		touch "~/.megarc"
+		chmod 0640 "~/.megarc"
 		echo "[Login]" > "~/.megarc"
 		echo "Username = $MEGA_USER" >> "~/.megarc"
 		echo "Password = $MEGA_PW" >> "~/.megarc"
