@@ -83,10 +83,10 @@ if [ ! `command -v megals 2>&1` ]; then
 fi
 
 ######## Controllo .megarc per sicurezza #######################################
-if [[ -f "~/.megarc" ]]; then
-	if [[$(stat -c %a ~/.megarc) != '640' ]]; then
+if [[ -f "/root/.megarc" ]]; then
+	if [[$(stat -c %a /root/.megarc) != '640' ]]; then
 		echo "ERRORE: gli attributi del file .megarc sono troppo permissivi! Attenzione, c'è la tua password in chiaro li dentro! fai"
-		echo "sudo chmod 0640 ~/.megarc"
+		echo "sudo chmod 0640 /root/.megarc"
 		exit 1
 	fi
 	#controllo per gli attributi dentro??
@@ -96,11 +96,11 @@ else
 		exit 1
 	else
 		#controllo per gli attributi dentro??
-		touch "~/.megarc"
-		chmod 0640 "~/.megarc"
-		echo "[Login]" > "~/.megarc"
-		echo "Username = $MEGA_USER" >> "~/.megarc"
-		echo "Password = $MEGA_PW" >> "~/.megarc"
+		touch "/root/.megarc"
+		chmod 0640 "/root/.megarc"
+		echo "[Login]" > "/root/.megarc"
+		echo "Username = $MEGA_USER" >> "/root/.megarc"
+		echo "Password = $MEGA_PW" >> "/root/.megarc"
 	fi
 fi
 
