@@ -82,10 +82,10 @@ if [ ! `command -v megals 2>&1` ]; then
 	fi
 fi
 
-if [ ! -z "$MEGA_USER" ] || [ ! -z "$MEGA_PW" ]; then
+if [[ ${MEGA_USER+x} || ${MEGA_PW+x} ]]; then
 	echo "ERRORE: Non hai impostato le credenziali per l'accesso..."
 else
-	PRELINEA+=" -u $MEGAUSER -p $MEGA_PW"
+	PRELINEA+=" -u $MEGA_USER -p $MEGA_PW"
 fi
 
 ### DEPRECATO ###
@@ -169,7 +169,7 @@ echo '#### INIZIO BACKUP ####'
 echo '#### può richiedere un po di tempo ####'
 echo
 # Workaround to prevent dbus error messages
-export $(dbus-launch)
+export $(dbus-launch) > /dev/null
 # Create base backup folder if needed
 [ -z "$(megals  $PRELINEA --reload /Root/backup_${BACKUP_PREFIX})" ] && megamkdir $PRELINEA /Root/backup_${BACKUP_PREFIX}
 
