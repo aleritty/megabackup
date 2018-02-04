@@ -157,7 +157,7 @@ sudo /bin/bash megaBackup.sh [ --upd ]
 
 --upd 				Aggiorna lo script all'ultima versione
 --help				Mostra questa schermata
--q | --quiet	Nasconde l'outup per l'uso negli script
+-q | --quiet	Nasconde l'output per l'uso negli script
 
 L'invocazione normale senza parametri lancia il backup secondo le configurazioni
 impostate nel file ~/.megaBackup.cfg
