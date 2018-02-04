@@ -30,7 +30,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.03
+VERSION=0.04
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
