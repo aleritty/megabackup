@@ -30,7 +30,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.05
+VERSION=0.06
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
@@ -52,7 +52,7 @@ else
   exit 1
 fi
 
-if [ -z ${QUIETMODE+x} ] || [ "$1" = "-q" ] || [ "$1" = "--quiet" ]; then
+if [ -n ${QUIETMODE+x} ] || [ "$1" = "-q" ] || [ "$1" = "--quiet" ]; then
 	PRELINEA=""
 	FINELINEA=""
 fi
@@ -82,14 +82,14 @@ if [ ! `command -v megals 2>&1` ]; then
 	fi
 fi
 
-if [[ ${MEGA_USER+x} || ${MEGA_PW+x} ]]; then
+if [[ -z ${MEGA_USER+x} || -z ${MEGA_PW+x} ]]; then
 	echo "ERRORE: Non hai impostato le credenziali per l'accesso..."
 else
 	PRELINEA+=" -u $MEGA_USER -p $MEGA_PW"
 fi
 
 ### DEPRECATO ###
-if [[ $(stat -c %a ~/.megarc) != '640' ]]; then
+if [[ -f "~/.megarc" && $(stat -c %a ~/.megarc) != '640' ]]; then
 	echo "ERRORE: gli attributi del file .megarc sono troppo permissivi! Attenzione, c'è la tua password in chiaro li dentro! fai"
 	echo "sudo chmod 0640 ~/.megarc"
 	exit 1
@@ -164,6 +164,7 @@ if [[ "$1" = "--upd" || "$1" = "-u" ]]; then
 	exit 0
 fi
 
+################# Sezione Backup Effettivo #####################################
 echo
 echo '#### INIZIO BACKUP ####'
 echo '#### può richiedere un po di tempo ####'
