@@ -30,7 +30,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.02
+VERSION=0.03
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
@@ -62,20 +62,27 @@ if [ ! `command -v megals 2>&1` ]; then
 	echo
 	read -p "Mi servono i megatools e tu non li hai, senza non posso fare nulla, vuoi installarli? y/[n]" -n 1 CHECKINSTALL
 	if [ "$CHECKINSTALL" = "y" ];then
+		echo
+		echo "OK! Procedo con l'installazione!"
+		echo
 		apt -y install build-essential libglib2.0-dev libssl-dev libcurl4-openssl-dev libgirepository1.0-dev glib-networking
+		apt -y install asciidoc --no-install-recommends
 		wget http://megatools.megous.com/builds/megatools-1.9.98.tar.gz
 		tar xzf megatools-1.9.98.tar.gz
 		cd megatools-1.9.98
 		./configure && make && make install && ldconfig
 		cd ..
 		rm -rf megatools-1.9.98.tar.gz megatools-1.9.98
+		echo
+		echo "Installazione terminata! Procedo con lo script"
+		echo
 	else
 		echo "Ok, non li ho installati, installali tu a mano e rilanciami"
 		exit 1
 	fi
 fi
 
-if [ ! -z "$MEGA_USER" ] || [ ! -z "$MEGA_PW" ];
+if [ ! -z "$MEGA_USER" ] || [ ! -z "$MEGA_PW" ]; then
 	echo "ERRORE: Non hai impostato le credenziali per l'accesso..."
 else
 	PRELINEA+=" -u $MEGAUSER -p $MEGA_PW"
