@@ -84,7 +84,7 @@ fi
 
 ######## Controllo .megarc per sicurezza #######################################
 if [[ -f "/root/.megarc" ]]; then
-	if [[$(stat -c %a /root/.megarc) != '640' ]]; then
+	if [[ $(stat -c %a /root/.megarc) != '640' ]]; then
 		echo "ERRORE: gli attributi del file .megarc sono troppo permissivi! Attenzione, c'è la tua password in chiaro li dentro! fai"
 		echo "sudo chmod 0640 /root/.megarc"
 		exit 1
