@@ -58,7 +58,7 @@ if [ -n ${QUIETMODE+x} ] || [ "$1" = "-q" ] || [ "$1" = "--quiet" ]; then
 fi
 
 ###Controlla esistenza di megatools senno chiedi ed installa
-if [ ! `command -v megals 2>&1` ]; then
+if [ ! `command -v /usr/local/bin/megals 2>&1` ]; then
 	echo
 	read -p "ERRORE: Mi servono i megatools e tu non li hai, senza non posso fare nulla, vuoi installarli? y/[n]" -n 1 CHECKINSTALL
 	if [ "$CHECKINSTALL" = "y" ];then
@@ -181,25 +181,25 @@ echo
 # Workaround to prevent dbus error messages
 export $(dbus-launch) > /dev/null
 # Create base backup folder if needed
-[ -z "$(megals  --reload /Root/backup_${BACKUP_PREFIX})" ] && megamkdir /Root/backup_${BACKUP_PREFIX}
+[ -z "$(/usr/local/bin/megals  --reload /Root/backup_${BACKUP_PREFIX})" ] && /usr/local/bin/megamkdir /Root/backup_${BACKUP_PREFIX}
 
-if [ "$KEEP_NUM" -gt 0 ] && [ $(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ] ; then
+if [ "$KEEP_NUM" -gt 0 ] && [ $(/usr/local/bin/megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ] ; then
 	echo
 	echo '#### ELIMINAZIONE VECCHI BACKUP ####'
   echo "questi backup verranno eliminati"
   echo "Qualsiasi altro file non verrà toccato"
-	while [ $(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
+	while [ $(/usr/local/bin/megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
 	do
-		TO_REMOVE=$(megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
+		TO_REMOVE=$(/usr/local/bin/megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
 		megarm ${TO_REMOVE}
 	done
 fi
 
 #if quiet
-megamkdir /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} 2> /dev/null
+/usr/local/bin/megamkdir /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} 2> /dev/null
 
 #if quiet
-megacopy --reload --no-progress -l ${BACKUP_LOCATION} -r /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} > /dev/null
+/usr/local/bin/megacopy --reload --no-progress -l ${BACKUP_LOCATION} -r /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} > /dev/null
 
 # Kill DBUS session daemon (workaround)
 if [[ ${DBUS_SESSION_BUS_PID} ]]; then
