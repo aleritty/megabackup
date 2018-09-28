@@ -191,7 +191,7 @@ if [ "$KEEP_NUM" -gt 0 ] && [ $(/usr/local/bin/megals --reload /Root/backup_${BA
 	while [ $(/usr/local/bin/megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
 	do
 		TO_REMOVE=$(/usr/local/bin/megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
-		megarm ${TO_REMOVE}
+		/usr/local/bin/megarm ${TO_REMOVE}
 	done
 fi
 
