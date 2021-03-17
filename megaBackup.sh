@@ -30,7 +30,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.10
+VERSION=0.11
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
@@ -67,12 +67,12 @@ if [ ! `command -v /usr/local/bin/megals 2>&1` ]; then
 		echo
 		apt -y install build-essential libglib2.0-dev libssl-dev libcurl4-openssl-dev libgirepository1.0-dev glib-networking
 		apt -y install asciidoc --no-install-recommends
-		wget http://megatools.megous.com/builds/megatools-1.9.98.tar.gz
-		tar xzf megatools-1.9.98.tar.gz
-		cd megatools-1.9.98
+		wget http://megatools.megous.com/builds/megatools-1.10.3.tar.gz
+		tar xzf megatools-1.10.3.tar.gz
+		cd megatools-1.10.3
 		./configure && make && make install && ldconfig
 		cd ..
-		rm -rf megatools-1.9.98.tar.gz megatools-1.9.98
+		rm -rf megatools-1.10.3.tar.gz megatools-1.10.3
 		echo
 		echo "Installazione terminata! Procedo con lo script"
 		echo
@@ -175,8 +175,8 @@ fi
 
 ################# Sezione Backup Effettivo #####################################
 echo
-echo '#### INIZIO BACKUP ####'
-echo '#### può richiedere un po di tempo ####'
+echo '#### PREPARAZIONE BACKUP ####'
+echo '#### può richiedere qualche secondo ####'
 echo
 # Workaround to prevent dbus error messages
 export $(dbus-launch) > /dev/null
@@ -194,6 +194,11 @@ if [ "$KEEP_NUM" -gt 0 ] && [ $(/usr/local/bin/megals --reload /Root/backup_${BA
 		/usr/local/bin/megarm ${TO_REMOVE}
 	done
 fi
+
+echo
+echo '#### INIZIO BACKUP ####'
+echo "#### il caricamento richiede TANTO tempo ####"
+echo
 
 #if quiet
 /usr/local/bin/megamkdir /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} 2> /dev/null
