@@ -30,7 +30,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.11
+VERSION=0.12
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
@@ -47,9 +47,13 @@ if [ -e ".megaBackup.cfg" ]; then
   source .megaBackup.cfg
 else
   echo
-  echo "ERRORE: Non hai ancora compilato le configurazioni, fallo e poi rilanciami"
+  echo "ERRORE: Non ho trovato il file di configurazione, edita .megaBackup.cfg e poi rilanciami"
   echo
   exit 1
+fi
+if [[ -z ${MEGA_USER+x} || -z ${MEGA_PW+x} ]]; then
+	echo "ERRORE: Non hai impostato le credenziali per l'accesso, salvale nel file di configurazione .megaBackup.cfg"
+	exit 1
 fi
 
 if [ -n ${QUIETMODE+x} ] || [ "$1" = "-q" ] || [ "$1" = "--quiet" ]; then
@@ -58,49 +62,30 @@ if [ -n ${QUIETMODE+x} ] || [ "$1" = "-q" ] || [ "$1" = "--quiet" ]; then
 fi
 
 ###Controlla esistenza di megatools senno chiedi ed installa
-if [ ! `command -v /usr/local/bin/megals 2>&1` ]; then
+if [ ! `command -v /usr/local/bin/mega-ls 2>&1` ]; then
 	echo
-	read -p "ERRORE: Mi servono i megatools e tu non li hai, senza non posso fare nulla, vuoi installarli? y/[n]" -n 1 CHECKINSTALL
-	if [ "$CHECKINSTALL" = "y" ];then
+	read -p "ERRORE: Mi serve il pacchetto megacmd e tu non lo hai, senza non posso fare nulla, posso installarlo per te? s/[N]" -n 1 CHECKINSTALL
+	if [ "$CHECKINSTALL" = "s" ];then
 		echo
 		echo "OK! Procedo con l'installazione!"
 		echo
-		apt -y install build-essential libglib2.0-dev libssl-dev libcurl4-openssl-dev libgirepository1.0-dev glib-networking
-		apt -y install asciidoc --no-install-recommends
-		wget http://megatools.megous.com/builds/megatools-1.10.3.tar.gz
-		tar xzf megatools-1.10.3.tar.gz
-		cd megatools-1.10.3
-		./configure && make && make install && ldconfig
-		cd ..
-		rm -rf megatools-1.10.3.tar.gz megatools-1.10.3
+		### La versione github richiede di essere compilata ed ha posco senso...
+		# DOWN_URL=`curl -s "https://api.github.com/repos/meganz/MEGAcmd/tags" | grep -i 'Linux' | grep 'tarball_url' | head -n 1 | cut -d '"' -f4`
+		# mkdir -p /tmp/mioMegaCmd && cd /tmp/mioMegaCmd
+		# wget -q -O megacmd.tar.gz -- $DOWN_URL
+		# tar -xf megacmd.tar.gz
+		# cd meganz-MEGAcmd*
+		# cd /tmp && rm -rf mioMegaCmd
+		### Quindi per ora defaultiamo così...
+		wget -q -O /tmp/megacmd.deb -- https://mega.nz/linux/MEGAsync/xUbuntu_18.04/amd64/megacmd_1.4.0-6.1_amd64.deb
+		dpkg -y -i /tmp/megacmd.deb && apt -y -f install
+		rm /tmp/megacmd.deb
 		echo
-		echo "Installazione terminata! Procedo con lo script"
+		echo "Installazione terminata! Procedo con il backup"
 		echo
 	else
-		echo "Ok, non li ho installati, installali tu a mano e rilanciami"
+		echo "Ok, installalo tu a mano dal sito di mega.nz e rilancia questo script"
 		exit 1
-	fi
-fi
-
-######## Controllo .megarc per sicurezza #######################################
-if [[ -f "/root/.megarc" ]]; then
-	if [[ $(stat -c %a /root/.megarc) != '640' ]]; then
-		echo "ERRORE: gli attributi del file .megarc sono troppo permissivi! Attenzione, c'è la tua password in chiaro li dentro! fai"
-		echo "sudo chmod 0640 /root/.megarc"
-		exit 1
-	fi
-	#controllo per gli attributi dentro??
-else
-	if [[ -z ${MEGA_USER+x} || -z ${MEGA_PW+x} ]]; then
-		echo "ERRORE: Non hai impostato le credenziali per l'accesso, salvale nel file di configurazione"
-		exit 1
-	else
-		#controllo per gli attributi dentro??
-		touch "/root/.megarc"
-		chmod 0640 "/root/.megarc"
-		echo "[Login]" > "/root/.megarc"
-		echo "Username = $MEGA_USER" >> "/root/.megarc"
-		echo "Password = $MEGA_PW" >> "/root/.megarc"
 	fi
 fi
 
@@ -122,7 +107,7 @@ upgradescript(){
     echo
     cd "$SCRIPT_DIR"
     # scelta se aggiornare...
-    git pull
+    git pull -f
 		clear
     echo "Aggiornamento terminato, rilancia lo script per effettuare il backup"
 		exit 0
@@ -157,11 +142,10 @@ sudo /bin/bash megaBackup.sh [ --upd ]
 
 --upd 				Aggiorna lo script all'ultima versione
 --help				Mostra questa schermata
--q | --quiet	Nasconde l'output per l'uso negli script
+-q | --quiet	Nasconde la maggior parte dell'output per l'uso negli script
 
 L'invocazione normale senza parametri lancia il backup secondo le configurazioni
 impostate nel file ~/.megaBackup.cfg
-
 "
 	exit 1
 fi
@@ -178,21 +162,23 @@ echo
 echo '#### PREPARAZIONE BACKUP ####'
 echo '#### può richiedere qualche secondo ####'
 echo
-# Workaround to prevent dbus error messages
-export $(dbus-launch) > /dev/null
-# Create base backup folder if needed
-[ -z "$(/usr/local/bin/megals  --reload /Root/backup_${BACKUP_PREFIX})" ] && /usr/local/bin/megamkdir /Root/backup_${BACKUP_PREFIX}
 
-if [ "$KEEP_NUM" -gt 0 ] && [ $(/usr/local/bin/megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ] ; then
-	echo
-	echo '#### ELIMINAZIONE VECCHI BACKUP ####'
+## Effettuo il login
+/usr/bin/mega-login "$MEGA_USER" "$MEGA_PW"
+
+# Create base backup folder if needed
+[ -z "$(/usr/bin/mega-ls backup_${BACKUP_PREFIX})" ] && /usr/bin/mega-mkdir backup_${BACKUP_PREFIX}
+
+if [ "$KEEP_NUM" -gt 0 ] && [ $(/usr/bin/mega-ls backup_${BACKUP_PREFIX} | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ] ; $
+        echo
+        echo '#### ELIMINAZIONE VECCHI BACKUP ####'
   echo "questi backup verranno eliminati"
   echo "Qualsiasi altro file non verrà toccato"
-	while [ $(/usr/local/bin/megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
-	do
-		TO_REMOVE=$(/usr/local/bin/megals --reload /Root/backup_${BACKUP_PREFIX} | grep -E "/Root/backup_${BACKUP_PREFIX}/[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
-		/usr/local/bin/megarm ${TO_REMOVE}
-	done
+        while [ $(/usr/bin/mega-ls "backup_${BACKUP_PREFIX}" | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
+        do
+                TO_REMOVE=$(/usr/bin/mega-ls "backup_${BACKUP_PREFIX}" | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
+                /usr/bin/mega-rm -rf "backup_${BACKUP_PREFIX}/${TO_REMOVE}"
+        done
 fi
 
 echo
@@ -201,16 +187,10 @@ echo "#### il caricamento richiede TANTO tempo ####"
 echo
 
 #if quiet
-/usr/local/bin/megamkdir /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} 2> /dev/null
+/usr/bin/mega-mkdir -p "backup_${BACKUP_PREFIX}/${TIMESTAMP}" 2> /dev/null
 
 #if quiet
-/usr/local/bin/megacopy --reload --no-progress -l ${BACKUP_LOCATION} -r /Root/backup_${BACKUP_PREFIX}/${TIMESTAMP} > /dev/null
-
-# Kill DBUS session daemon (workaround)
-if [[ ${DBUS_SESSION_BUS_PID} ]]; then
-	kill ${DBUS_SESSION_BUS_PID}
-	rm -f ${DBUS_SESSION_BUS_ADDRESS}
-fi
+/usr/bin/mega-put -c "${BACKUP_LOCATION}" "backup_${BACKUP_PREFIX}/${TIMESTAMP}/" > /dev/null
 
 echo
 echo

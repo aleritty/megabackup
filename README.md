@@ -1,2 +1,2 @@
-# mongobackup
-Piccolo script di backup per cartelle utilizzando mega.nz
+# MegaBackup
+Piccolo script di backup che utilizza mega.nz come backend
