@@ -29,7 +29,7 @@
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
-VERSION=0.12
+VERSION=0.22
 
 #################### DEBUG ##########################
 if [ $1 == "-vvv" ]; then
