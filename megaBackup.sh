@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ############################################################################################################
 #
 # Mega Backup Script
@@ -31,6 +30,11 @@
 #	derivata dall'uso improprio o inconsapevole di questo script!
 
 VERSION=0.12
+
+#################### DEBUG ##########################
+if [ $1 == "-vvv" ]; then
+	set -x
+fi
 
 ######################### Se non sei root non sei figo #########################
 if [[ $EUID -ne 0 ]]; then
@@ -168,16 +172,16 @@ echo '#### può richiedere qualche secondo ####'
 echo
 
 ## Effettuo il login
-/usr/bin/mega-login "$MEGA_USER" "$MEGA_PW"
+/usr/bin/mega-login '${MEGA_USER}' '${MEGA_PW}'
 
 # Create base backup folder if needed
 [ -z "$(/usr/bin/mega-ls backup_${BACKUP_PREFIX})" ] && /usr/bin/mega-mkdir backup_${BACKUP_PREFIX}
 
-if [ "$KEEP_NUM" -gt 0 ] && [ $(/usr/bin/mega-ls backup_${BACKUP_PREFIX} | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ] ; $
+if [ "$KEEP_NUM" -gt 0 ] && [ $(/usr/bin/mega-ls backup_${BACKUP_PREFIX} | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]; then
         echo
         echo '#### ELIMINAZIONE VECCHI BACKUP ####'
-  echo "questi backup verranno eliminati"
-  echo "Qualsiasi altro file non verrà toccato"
+        echo "questi backup verranno eliminati"
+        echo "Qualsiasi altro file non verrà toccato"
         while [ $(/usr/bin/mega-ls "backup_${BACKUP_PREFIX}" | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | wc -l) -gt ${KEEP_NUM} ]
         do
                 TO_REMOVE=$(/usr/bin/mega-ls "backup_${BACKUP_PREFIX}" | grep -E "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}$" | sort | head -n 1)
