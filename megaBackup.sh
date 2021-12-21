@@ -61,8 +61,8 @@ if [ -n ${QUIETMODE+x} ] || [ "$1" = "-q" ] || [ "$1" = "--quiet" ]; then
 	FINELINEA=""
 fi
 
-###Controlla esistenza di megatools senno chiedi ed installa
-if [ ! `command -v /usr/local/bin/mega-ls 2>&1` ]; then
+###Controlla esistenza di megacmd altrimenti chiedi ed installa
+if [ ! `command -v /usr/bin/mega-cmd 2>&1` ]; then
 	echo
 	read -p "ERRORE: Mi serve il pacchetto megacmd e tu non lo hai, senza non posso fare nulla, posso installarlo per te? s/[N]" -n 1 CHECKINSTALL
 	if [ "$CHECKINSTALL" = "s" ];then
@@ -78,19 +78,23 @@ if [ ! `command -v /usr/local/bin/mega-ls 2>&1` ]; then
 		# cd /tmp && rm -rf mioMegaCmd
 		### Quindi per ora defaultiamo così...
 		wget -q -O /tmp/megacmd.deb -- https://mega.nz/linux/MEGAsync/xUbuntu_18.04/amd64/megacmd_1.4.0-6.1_amd64.deb
-		dpkg -y -i /tmp/megacmd.deb && apt -y -f install
+		dpkg -i /tmp/megacmd.deb; apt -y -f install
 		rm /tmp/megacmd.deb
 		echo
 		echo "Installazione terminata! Procedo con il backup"
 		echo
 	else
+		echo ""
 		echo "Ok, installalo tu a mano dal sito di mega.nz e rilancia questo script"
+		echo ""
 		exit 1
 	fi
 fi
 
 if [ ! -d "$BACKUP_LOCATION" ]; then
+	echo ""
 	echo "ERRORE: Non esiste la cartella $BACKUP_LOCATION e tu vorresti farne il backup??"
+	echo ""
 	exit 1
 fi
 cd "$BACKUP_LOCATION"
